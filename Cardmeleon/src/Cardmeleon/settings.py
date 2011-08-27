@@ -122,6 +122,7 @@ INSTALLED_APPS = (
     # 'django.contrib.admindocs',
     
     'Cardmeleon.registration',
+    'Cardmeleon.model',
 )
 
 ACCOUNT_ACTIVATION_DAYS = 7
