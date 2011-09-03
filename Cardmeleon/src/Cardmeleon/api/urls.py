@@ -6,7 +6,7 @@ Created on Aug 10, 2011
 
 from django.conf.urls.defaults import *
 from piston.resource import Resource
-from Cardmeleon.api.handlers import UserHandler
+from Cardmeleon.api.enduser.handlers import UserHandler
 
 user_handler = Resource(UserHandler)
 
