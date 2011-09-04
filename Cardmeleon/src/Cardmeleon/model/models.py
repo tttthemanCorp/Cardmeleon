@@ -10,6 +10,10 @@ class User(models.Model):
     referredby = models.ForeignKey('self',null=True)
     referredby_username = models.CharField(max_length=30,null=True)
     
+    def __unicode__(self):
+        return "username:{0}, facebook:{1}, email:{2}, phone:{3}, referredBy:{4}".format(
+                self.username, self.facebook_id, self.email, self.phone, self.referredby_username)
+    
 class UserPoint(models.Model):
     user = models.OneToOneField(User)
     points = models.IntegerField()
@@ -34,7 +38,7 @@ class Merchant(models.Model):
 
 class RewardProgram(models.Model):
     merchant = models.ForeignKey(Merchant)
-    type = models.SmallIntegerField()  # DollarAmount|PurchaseTimes|Points
+    prog_type = models.SmallIntegerField()  # DollarAmount|PurchaseTimes|Points
     reward_trigger = models.FloatField(null=True)  # accumulated number to trigger rewards
     reward = models.ForeignKey('Reward')
     points_per_activity = models.IntegerField(null=True)  # points earned per purchase activity
