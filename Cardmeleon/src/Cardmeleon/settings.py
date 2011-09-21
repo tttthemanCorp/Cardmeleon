@@ -12,7 +12,7 @@ MANAGERS = ADMINS
 DATABASES = {
     'default': {
         'ENGINE': 'django.db.backends.sqlite3', # Add 'postgresql_psycopg2', 'postgresql', 'mysql', 'sqlite3' or 'oracle'.
-        'NAME': 'C:\\Projects\\cardmeleon\\Cardmeleon\\src\\sqlite.db',                      # Or path to database file if using sqlite3.
+        'NAME': '/Users/jlu/Projects/Cardmeleon/Cardmeleon/src/sqlite.db',                      # Or path to database file if using sqlite3.
         'USER': '',                      # Not used with sqlite3.
         'PASSWORD': '',                  # Not used with sqlite3.
         'HOST': '',                      # Set to empty string for localhost. Not used with sqlite3.
@@ -106,7 +106,7 @@ TEMPLATE_DIRS = (
     # Put strings here, like "/home/html/django_templates" or "C:/www/django/templates".
     # Always use forward slashes, even on Windows.
     # Don't forget to use absolute paths, not relative paths.
-    'C:/Projects/cardmeleon/Cardmeleon/src/Cardmeleon/templates',
+    '/Users/jlu/Projects/Cardmeleon/Cardmeleon/src/Cardmeleon/templates',
 )
 
 INSTALLED_APPS = (
@@ -121,13 +121,15 @@ INSTALLED_APPS = (
     # Uncomment the next line to enable admin documentation:
     # 'django.contrib.admindocs',
     
-    'Cardmeleon.registration',
-    'Cardmeleon.model',
+    #'Cardmeleon.registration',
+    'Cardmeleon.server',
+
 )
 
 ACCOUNT_ACTIVATION_DAYS = 7
 EMAIL_BACKEND = 'django.core.mail.backends.console.EmailBackend'
 LOGIN_REDIRECT_URL = '/acct/profile/'
+#TEST_RUNNER = 'django.test.simple.DjangoTestSuiteRunner'
 
 
 # A sample logging configuration. The only tangible logging

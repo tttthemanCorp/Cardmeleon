@@ -1,0 +1,25 @@
+1. APIs for endusers:
+
+register a new user
+get user data
+refer friends
+get merchants
+get merchant details
+make a purchase
+redeem a reward
+set preferences ---
+mark a reward for sell
+get all rewards for sell
+buy a reward
+gift out a reward
+
+2. APIs for merchants
+
+register a new merchant
+set merchant reward program details
+issue a reward to endusers (manually)
+
+3. APIs for batch jobs
+
+expire rewards (daily)
+generate merchant reports

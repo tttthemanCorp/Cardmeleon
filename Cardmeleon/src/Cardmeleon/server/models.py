@@ -4,24 +4,42 @@ from django.db import models
     
 class User(models.Model):
     username = models.CharField(max_length=30,null=True)
-    facebook_id = models.EmailField(max_length=75,null=True)
+    facebook = models.EmailField(max_length=75,null=True)
     email = models.EmailField(max_length=75,null=True)
     phone = models.CharField(max_length=20,null=True)
     referredby = models.ForeignKey('self',null=True)
     referredby_username = models.CharField(max_length=30,null=True)
     
+    def updateValues(self, **data):
+        if 'username' in data:
+            self.username = data['username']
+        if 'facebook' in data:
+            self.facebook_id = data['facebook']
+        if 'email' in data:
+            self.email = data['email']
+        if 'phone' in data:
+            self.phone = data['phone']
+        if 'referredby' in data:
+            self.referredby = data['referredby']
+        if 'referredby_username' in data:
+            self.referredby_username = data['referredby_username']
+  
     def __unicode__(self):
         return "username:{0}, facebook:{1}, email:{2}, phone:{3}, referredBy:{4}".format(
-                self.username, self.facebook_id, self.email, self.phone, self.referredby_username)
+                self.username, self.facebook, self.email, self.phone, self.referredby_username)
     
 class UserPoint(models.Model):
     user = models.OneToOneField(User)
     points = models.IntegerField()
     
+    def __unicode__(self):
+        return "username:{0}, points:{1}".format(self.user.username, self.points)
+    
 class UserReward(models.Model):
     user = models.ForeignKey(User)
     reward = models.ForeignKey('Reward')
     expiration = models.DateField(null=True)
+    forsale = models.BooleanField()
     
 class UserPref(models.Model):
     user = models.OneToOneField(User)
