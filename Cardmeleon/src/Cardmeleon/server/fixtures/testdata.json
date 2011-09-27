@@ -25,6 +25,82 @@
   }, 
   {
     "pk": 1, 
+    "model": "server.userpoint", 
+    "fields": {
+      "points": 200, 
+      "user": 1
+    }
+  }, 
+  {
+    "pk": 2, 
+    "model": "server.userpoint", 
+    "fields": {
+      "points": 150, 
+      "user": 2
+    }
+  }, 
+  {
+    "pk": 1, 
+    "model": "server.userprogress", 
+    "fields": {
+      "merchant": 1, 
+      "cur_times": 2, 
+      "user": 1, 
+      "cur_dollar_amt": "50.25"
+    }
+  }, 
+  {
+    "pk": 2, 
+    "model": "server.userprogress", 
+    "fields": {
+      "merchant": 2, 
+      "cur_times": 3, 
+      "user": 2, 
+      "cur_dollar_amt": "106.5"
+    }
+  }, 
+  {
+    "pk": 1, 
+    "model": "server.userreward", 
+    "fields": {
+      "reward": 1, 
+      "user": 1, 
+      "forsale": false, 
+      "expiration": "2012-03-12"
+    }
+  }, 
+  {
+    "pk": 2, 
+    "model": "server.userreward", 
+    "fields": {
+      "reward": 2, 
+      "user": 1, 
+      "forsale": true, 
+      "expiration": "2012-08-20"
+    }
+  }, 
+  {
+    "pk": 3, 
+    "model": "server.userreward", 
+    "fields": {
+      "reward": 1, 
+      "user": 2, 
+      "forsale": true, 
+      "expiration": "2012-08-15"
+    }
+  }, 
+  {
+    "pk": 4, 
+    "model": "server.userreward", 
+    "fields": {
+      "reward": 2, 
+      "user": 2, 
+      "forsale": false, 
+      "expiration": "2012-05-06"
+    }
+  }, 
+  {
+    "pk": 1, 
     "model": "server.userpref", 
     "fields": {
       "nearby_radius": 40.0, 
@@ -37,6 +113,104 @@
     "fields": {
       "nearby_radius": 60.0, 
       "user": 2
+    }
+  }, 
+  {
+    "pk": 1, 
+    "model": "server.merchant", 
+    "fields": {
+      "name": "Safeway", 
+      "longitude": 201.32300000000001, 
+      "phone": "6502334332", 
+      "address": "434 abc ave, san jose, ca", 
+      "latitude": 102.45399999999999, 
+      "logo": "/path/to/logo.png", 
+      "email": "safeway@safeway.com"
+    }
+  }, 
+  {
+    "pk": 2, 
+    "model": "server.merchant", 
+    "fields": {
+      "name": "StarBucks", 
+      "longitude": 22.323, 
+      "phone": "4082334332", 
+      "address": "101 abc ave, san jose, ca", 
+      "latitude": 44.454000000000001, 
+      "logo": "/path2/to/logo.png", 
+      "email": "support@starbucks.com"
+    }
+  }, 
+  {
+    "pk": 1, 
+    "model": "server.rewardprogram", 
+    "fields": {
+      "merchant": 1, 
+      "status": 1, 
+      "name": "safeway loyalty program", 
+      "prog_type": 1, 
+      "reward_trigger": 200.0, 
+      "end_time": null, 
+      "reward": 1, 
+      "start_time": null
+    }
+  }, 
+  {
+    "pk": 2, 
+    "model": "server.rewardprogram", 
+    "fields": {
+      "merchant": 2, 
+      "status": 1, 
+      "name": "starbucks loyalty program", 
+      "prog_type": 1, 
+      "reward_trigger": 200.0, 
+      "end_time": null, 
+      "reward": 2, 
+      "start_time": null
+    }
+  }, 
+  {
+    "pk": 3, 
+    "model": "server.rewardprogram", 
+    "fields": {
+      "merchant": 1, 
+      "status": 1, 
+      "name": "safeway loyalty program 2", 
+      "prog_type": 1, 
+      "reward_trigger": 400.0, 
+      "end_time": null, 
+      "reward": 2, 
+      "start_time": null
+    }
+  }, 
+  {
+    "pk": 1, 
+    "model": "server.reward", 
+    "fields": {
+      "merchant": 1, 
+      "status": 1, 
+      "equiv_points": 20, 
+      "name": "free bread", 
+      "expire_in_days": 0, 
+      "expire_in_years": 3, 
+      "equiv_dollar": "20", 
+      "expire_in_months": 0, 
+      "description": "free whole-wheet bread"
+    }
+  }, 
+  {
+    "pk": 2, 
+    "model": "server.reward", 
+    "fields": {
+      "merchant": 2, 
+      "status": 1, 
+      "equiv_points": 10, 
+      "name": "free starbucks", 
+      "expire_in_days": 0, 
+      "expire_in_years": 3, 
+      "equiv_dollar": "10", 
+      "expire_in_months": 0, 
+      "description": "free one cup of starbucks coffee"
     }
   }
 ]

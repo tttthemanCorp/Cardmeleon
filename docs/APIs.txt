@@ -1,25 +1,24 @@
 1. APIs for endusers:
 
-register a new user
-get user data
-refer friends
-get merchants
-get merchant details
-make a purchase
-redeem a reward
-set preferences ---
-mark a reward for sell
-get all rewards for sell
-buy a reward
-gift out a reward
+register a new user (update referral activities) --
+get user data --
+refer friends --
+get nearby merchants -
+get merchant details --
+make a purchase --
+redeem a reward --
+set preferences --
+mark a reward for sell --
+get all nearby rewards for sell -
+buy a reward --
+gift out a reward --
+trigger a reward (automatically or manually) --
 
 2. APIs for merchants
 
-register a new merchant
-set merchant reward program details
-issue a reward to endusers (manually)
+register a new merchant --
+set merchant reward program details --
 
 3. APIs for batch jobs
 
-expire rewards (daily)
 generate merchant reports

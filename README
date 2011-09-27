@@ -22,9 +22,10 @@ Web Environment Installation Guide:
    .settings/
    *.pyc
 8. install django-piston 0.2.2 (https://bitbucket.org/jespern/django-piston/wiki/Home) (to install: python setup.py install)
+9. apply piston patch (piston.patch in the attachment section): https://bitbucket.org/jespern/django-piston/issue/192/object-handler-fields-override-local-field
 
 Mobile Environment Installation Guide:
 ======================================
-1. install Appcelerator Titanium Studio (Titanium Studio.exe)
+1. install Appcelerator Titanium Studio (Titanium Studio.exe) - You need to sign up a "Community" account which is free
 2. install Android SDK (android-sdk_r12-windows.zip)
 3. install iOS SDK
