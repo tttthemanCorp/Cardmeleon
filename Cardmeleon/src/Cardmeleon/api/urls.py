@@ -31,10 +31,10 @@ urlpatterns = patterns('',
    url(r'^users/(?P<user_id>\d+)/refer$', refer_activity_handler, {'emitter_format':'json'}),
    url(r'^users/(?P<user_id>\d+)/pref$', userpref_handler, {'emitter_format':'json'}),
    url(r'^users/(?P<user_id>\d+)', user_handler, {'emitter_format':'json'}),
-   url(r'^users/', user_handler, {'emitter_format':'json'}),
+   url(r'^users$', user_handler, {'emitter_format':'json'}),
    url(r'^stores/(?P<merchant_id>\d+)/reward(?P<reward_id>\?\d+)?$', reward_handler, {'emitter_format':'json'}),
    url(r'^stores/(?P<merchant_id>\d+)/program(?P<program_id>\?\d+)?$', program_handler, {'emitter_format':'json'}),
-   url(r'^stores/(?P<merchant_id>\d+)/$', merchant_handler, {'emitter_format':'json'}),
-   url(r'^stores/$', merchant_handler, {'emitter_format':'json'}),
+   url(r'^stores/(?P<merchant_id>\d+)$', merchant_handler, {'emitter_format':'json'}),
+   url(r'^stores$', merchant_handler, {'emitter_format':'json'}),
    url(r'^stores/prox/((?P<longitude>\d*\.?\d+),(?P<latitude>\d*\.?\d+),(?P<distance>\d+))?$', merchant_handler, {'emitter_format':'json'}),  # GET only
 )

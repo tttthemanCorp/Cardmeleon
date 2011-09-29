@@ -7,8 +7,7 @@ class User(models.Model):
     facebook = models.EmailField(max_length=75,null=True)
     email = models.EmailField(max_length=75,null=True)
     phone = models.CharField(max_length=20,null=True)
-    referredby = models.ForeignKey('self',null=True)
-    referredby_username = models.CharField(max_length=30,null=True)
+    referer = models.ForeignKey('self',null=True)
     
     def updateValues(self, **data):
         if 'username' in data:
@@ -19,14 +18,12 @@ class User(models.Model):
             self.email = data['email']
         if 'phone' in data:
             self.phone = data['phone']
-        if 'referredby' in data:
-            self.referredby = data['referredby']
-        if 'referredby_username' in data:
-            self.referredby_username = data['referredby_username']
+        #if 'referer' in data:
+        #    self.referer = data['referer']
   
     def __unicode__(self):
-        return "username:{0}, facebook:{1}, email:{2}, phone:{3}, referredBy:{4}".format(
-                self.username, self.facebook, self.email, self.phone, self.referredby_username)
+        return "username:{0}, facebook:{1}, email:{2}, phone:{3}, referer:{4}".format(
+                self.username, self.facebook, self.email, self.phone, self.referer.id)
     
 class UserPoint(models.Model):
     user = models.OneToOneField(User)

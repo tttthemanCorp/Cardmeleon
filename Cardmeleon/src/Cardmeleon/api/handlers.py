@@ -8,6 +8,7 @@ from piston.handler import BaseHandler
 from piston.utils import rc, throttle
 from datetime import datetime
 from decimal import Decimal
+from django.db.models import Q
 
 from Cardmeleon.server.models import User, UserPoint, UserReward, UserPref, ReferralActivity, PurchaseActivity, RewardActivity, Merchant, Reward, RewardProgram, UserProgress
 from Cardmeleon.settings import REFERRAL_BONUS
@@ -18,11 +19,22 @@ class SharedHandler(BaseHandler):
     common base handler for all cardmeleon rest handlers
     """
     
-    def get(self, data, key):
-        if key in data:
-            return data[key]
-        else:
-            return None
+    def userExists(self, data):
+        try:
+            if data.get('username'):
+                a = Q(username__iexact=data.get('username'))
+            else:
+                a = Q(username__isnull=True)
+            if data.get('facebook'):
+                b = Q(facebook__iexact=data.get('facebook'))
+            else:
+                b = Q(facebook__isnull=True)
+            User.objects.get(a & b)
+            return True
+        except User.MultipleObjectsReturned:
+            return True
+        except User.DoesNotExist:
+            return False
     
     def userById(self, userId):
         try:
@@ -31,12 +43,9 @@ class SharedHandler(BaseHandler):
         except User.DoesNotExist:
             return None
         
-    def userByLogin(self, login, cardmeleon):
+    def userByLogin(self, login):
         try:
-            if cardmeleon:
-                user = User.objects.get(username__iexact=login)
-            else:
-                user = User.objects.get(facebook_id__iexact=login)
+            user = User.objects.get(Q(username__iexact=login) | Q(facebook__iexact=login))
             return user
         except User.DoesNotExist:
             return None
@@ -94,6 +103,7 @@ class SharedHandler(BaseHandler):
 class UserHandler(SharedHandler):
     allowed_methods = ('GET', 'POST', 'PUT', 'DELETE')
     model = User
+    fields = ('username','facebook','email','phone',('referer',('id',)))
 
     def read(self, request, user_id=None):
         """
@@ -103,16 +113,19 @@ class UserHandler(SharedHandler):
         base = User.objects
 
         if user_id:
-            try:
-                user = base.get(id=user_id)
-            except User.DoesNotExist:
-                user = None
+            user = base.get(id=user_id)
+            
             try:
                 userpoint = UserPoint.objects.get(user__id=user_id)
             except UserPoint.DoesNotExist:
                 userpoint = None
+            try:
+                userprogress = UserProgress.objects.get(user__id=user_id)
+            except UserProgress.DoesNotExist:
+                userprogress = None
             userrewards = UserReward.objects.filter(user__id=user_id)
-            return {"user":user, "userpoint":userpoint, "userrewards":userrewards}
+            self.fields = None
+            return {"user":user, "userprogress":userprogress, "userpoint":userpoint, "userrewards":userrewards}
         else:
             return base.all() # Or base.filter(...)
    
@@ -124,33 +137,39 @@ class UserHandler(SharedHandler):
         attrs = self.flatten_dict(request.data)
         #print attrs
         
-        try:
-            if self.exists(**attrs):
-                return rc.DUPLICATE_ENTRY
-            else:
-                #insert new user
-                user = User()
-                user.updateValues(**attrs)
-                user.save()
-                
-                #update referral activity table
-                refereeName = attrs['username']
-                if refereeName:
-                    refereeName = attrs['facebook']
-                refererName = attrs['referredby_username']
-                if refererName: 
-                    referActivity = ReferralActivity.objects.filter(referer__name__iexact=refererName, referee_name__iexact=refereeName).latest('time')
-                    referActivity.referee = user
-                    referActivity.referee_join_time = datetime.now()
-                    referActivity.save()
-                    
-                #update UserPoint for referral bonus
-                userPoint = UserPoint.objects.get(user__username=refererName)
-                userPoint.points += REFERRAL_BONUS
-                
-                return rc.CREATED
-        except Exception as inst:
-            print inst
+        if self.userExists(attrs):
+            return rc.DUPLICATE_ENTRY
+        
+        #insert new user
+        user = User()
+        user.updateValues(**attrs)
+        user.save()
+        
+        #update referral activity table
+        refererDict = attrs.get('referer')
+        if refererDict:
+            refererName = refererDict.get('username')
+            if not refererName:
+                refererName = refererDict.get('facebook')
+            if refererName:
+                referer = self.userByLogin(refererName)
+                if referer:
+                    refereeName = user.username
+                    if not refereeName:
+                        refereeName = user.facebook
+                    try:
+                        #TODO - the following query may fail to get the referral activity record.  revisit it later for a better way
+                        referActivity = ReferralActivity.objects.filter(referer__id=referer.id, referee_name__iexact=refereeName).latest('time')
+                        referActivity.referee = user
+                        referActivity.referee_join_time = datetime.now()
+                        referActivity.save()
+                    except ReferralActivity.DoesNotExist:
+                        pass
+                    #update UserPoint for referral bonus
+                    userPoint = UserPoint.objects.get(user__id=referer.id)
+                    userPoint.points += REFERRAL_BONUS
+        
+        return rc.CREATED
    
     @throttle(10, 60) # allow 5 times in 1 minute
     def update(self, request, user_id):
@@ -162,6 +181,14 @@ class UserHandler(SharedHandler):
         attrs = self.flatten_dict(request.data)
         #print attrs
         
+        #does not allow change of username/facebook/referer fields
+        if "username" in attrs:
+            del attrs["username"]
+        if "facebook" in attrs:
+            del attrs["facebook"]
+        if "referer" in attrs:
+            del attrs["referer"]
+            
         user.updateValues(**attrs)
             
         user.save()
@@ -745,7 +772,14 @@ class MerchantHandler(SharedHandler):
 class UserPointHandler(SharedHandler):
     allowed_methods = ('GET', 'POST', 'PUT', 'DELETE')
     model = UserPoint
-    fields = ('points', 'cur_dollar_amt', 'cur_times')
+    fields = ('points',)
+    
+
+#UserProgressHandler
+class UserProgressHandler(SharedHandler):
+    allowed_methods = ('GET', 'POST', 'PUT', 'DELETE')
+    model = UserProgress
+    fields = (('merchant', ('id', 'name')), 'cur_dollar_amt', 'cur_times')
     
 
 #RewardHandler

@@ -4,11 +4,10 @@
     "model": "server.user", 
     "fields": {
       "username": "ttttheman", 
-      "referredby": null, 
       "phone": "4082323232", 
       "facebook": null, 
-      "referredby_username": "ttttheman", 
-      "email": "ttttheman@test.com"
+      "email": "ttttheman@test.com", 
+      "referer": 2
     }
   }, 
   {
@@ -16,11 +15,10 @@
     "model": "server.user", 
     "fields": {
       "username": "ttttheman2", 
-      "referredby": null, 
       "phone": "4084545455", 
       "facebook": null, 
-      "referredby_username": "ttttheman", 
-      "email": "ttttheman2@test.com"
+      "email": "ttttheman2@test.com", 
+      "referer": null
     }
   }, 
   {
