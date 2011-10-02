@@ -155,8 +155,8 @@ class RewardActivity(models.Model):
     reward = models.ForeignKey(Reward)
     time = models.DateTimeField(auto_now_add=True)
     activity_type = models.SmallIntegerField()  # redeem|buy|gift: 1/2/3
-    from_user = models.ForeignKey(User,related_name='User.initiating_rewardactivity_set',null=True)  #redeemer|seller|gifter
-    to_user = models.ForeignKey(User,related_name='User.receiving_rewardactivity_set')  #(merchant)|buyer|gift-receiver
+    from_user = models.ForeignKey(User,related_name='User.initiating_rewardactivity_set',blank=True,null=True)  #redeemer|seller|gifter
+    to_user = models.ForeignKey(User,related_name='User.receiving_rewardactivity_set',blank=True,null=True)  #(merchant)|buyer|gift-receiver
     description = models.CharField(max_length=200,null=True)
     points_value = models.IntegerField(null=True)
         
@@ -168,7 +168,7 @@ class ReferralActivity(models.Model):
     referer = models.ForeignKey(User,related_name='User.referer_activity_set')
     referee = models.ForeignKey(User,related_name='User.referee_activity_set',null=True)
     referee_name = models.CharField(max_length=30,null=True)
-    refer_method = models.SmallIntegerField()  # email|text|phone|web|other
+    refer_method = models.SmallIntegerField()  # email|text|phone|web|other: 0|1|2|3|4
     referee_join_time = models.DateTimeField(null=True)
     
     class Meta:

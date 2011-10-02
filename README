@@ -23,6 +23,7 @@ Web Environment Installation Guide:
    *.pyc
 8. install django-piston 0.2.2 (https://bitbucket.org/jespern/django-piston/wiki/Home) (to install: python setup.py install)
 9. apply piston patch (piston.patch in the attachment section): https://bitbucket.org/jespern/django-piston/issue/192/object-handler-fields-override-local-field
+10. apply piston RawQuerySet patch: https://bitbucket.org/j00bar/django-piston/changeset/e959ed304915
 
 Mobile Environment Installation Guide:
 ======================================

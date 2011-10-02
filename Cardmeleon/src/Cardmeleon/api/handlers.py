@@ -9,6 +9,7 @@ from piston.utils import rc, throttle
 from datetime import datetime
 from decimal import Decimal
 from django.db.models import Q
+from datetime import date
 
 from Cardmeleon.server.models import User, UserPoint, UserReward, UserPref, ReferralActivity, PurchaseActivity, RewardActivity, Merchant, Reward, RewardProgram, UserProgress
 from Cardmeleon.settings import REFERRAL_BONUS
@@ -129,7 +130,7 @@ class UserHandler(SharedHandler):
         else:
             return base.all() # Or base.filter(...)
    
-    @throttle(10, 60) # allow 5 times in 1 minute
+    #@throttle(10, 60) # allow 5 times in 1 minute
     def create(self, request):
         """
         Creates a new user.
@@ -171,7 +172,7 @@ class UserHandler(SharedHandler):
         
         return rc.CREATED
    
-    @throttle(10, 60) # allow 5 times in 1 minute
+    #@throttle(10, 60) # allow 5 times in 1 minute
     def update(self, request, user_id):
         """
         Update a user's information
@@ -239,31 +240,31 @@ class UserPrefHandler(SharedHandler):
         """
         return UserPref.objects.get(user__id=user_id)
    
-    @throttle(10, 60) # allow 5 times in 1 minute
+    #@throttle(10, 60) # allow 5 times in 1 minute
     def create(self, request, user_id):
         """
         Creates a new userPref.
         """
         attrs = self.flatten_dict(request.data)
-        print attrs
+        #print attrs
         
         self.insertOrUpdate(user_id, attrs['nearby_radius'])
         
         return rc.CREATED
    
-    @throttle(10, 60) # allow 5 times in 1 minute
+    #@throttle(10, 60) # allow 5 times in 1 minute
     def update(self, request, user_id):
         """
         Update a userPref's values
         """
         attrs = self.flatten_dict(request.data)
-        print attrs
+        #print attrs
         
         self.insertOrUpdate(user_id, attrs['nearby_radius'])
 
         return rc.ALL_OK
 
-    @throttle(10, 60) # allow 5 times in 1 minute
+    #@throttle(10, 60) # allow 5 times in 1 minute
     def delete(self, request, user_id):
         """
         Delete a userpref
@@ -282,12 +283,12 @@ class UserPrefHandler(SharedHandler):
 class UserRewardHandler(SharedHandler):
     allowed_methods = ('GET', 'POST', 'PUT', 'DELETE')
     model = UserReward
-    fields = ('reward', 'expiration', 'forsale')
+    fields = (('user', ('id','username','facebook')), 'reward', 'expiration', 'forsale')
 
     def existsAndActive(self, user, reward):
         exists, userreward = self.exists(user, reward)
         if exists:
-            today = datetime.date.today()
+            today = date.today()
             if userreward.expiration >= today:
                 return (True, userreward)
  
@@ -300,7 +301,7 @@ class UserRewardHandler(SharedHandler):
         except UserReward.DoesNotExist:
             return (False, None)
 
-    def read(self, request, user_id=None, sell_only=False):
+    def read(self, request, user_id=None, sell_only='forsell'):
         """
         If user_id is available, then returns all rewards belong to this user_id;
         If user_id is None, then returns all rewards (if sell_only is Flase) or all for-sell rewards (if sell_only is True) in the market (non-expired)
@@ -310,19 +311,19 @@ class UserRewardHandler(SharedHandler):
         if user_id:
             return base.filter(user__id=user_id)
         else:
-            today = datetime.date.today()
-            if (sell_only == 'sell'):
+            today = date.today()
+            if (sell_only == 'forsell'):
                 return base.filter(expiration__gte=today, forsale=True)
             else:
                 return base.filter(expiration__gte=today)
    
-    @throttle(10, 60) # allow 5 times in 1 minute
+    #@throttle(10, 60) # allow 5 times in 1 minute
     def create(self, request, user_id):
         """
         When the points become eligible, user requests a reward
         """
         attrs = self.flatten_dict(request.data)
-        print attrs
+        #print attrs
         
         user, _, merchant = self.idsValidation(user_id, None, attrs['merchant_id'])
         rewardProgram = self.rewardProgramById(attrs['rewardprogram_id'])
@@ -345,7 +346,7 @@ class UserRewardHandler(SharedHandler):
         
         #issue reward to user
         reward = rewardProgram.reward
-        today = datetime.date.today()
+        today = date.today()
         expiration = today.replace(year=today.year+reward.expire_in_years, month=today.month+reward.expire_in_months, day=today.day+reward.expire_in_days)
         userreward = UserReward()
         userreward.user = user
@@ -359,26 +360,31 @@ class UserRewardHandler(SharedHandler):
             
         return rc.CREATED
    
-    @throttle(10, 60) # allow 5 times in 1 minute
+    #@throttle(10, 60) # allow 5 times in 1 minute
     def update(self, request, user_id):
         """
         Update a userreward's values: mark it as "for sale", or change the expiration date
         """
         attrs = self.flatten_dict(request.data)
-        print attrs
+        #print attrs
         
-        user, reward, _ = self.idsValidation(user_id, attrs['reward_id'], None)
+        rewardId = attrs['reward']['id']
+        user, reward, _ = self.idsValidation(user_id, rewardId, None)
         
         exists, userreward = self.exists(user, reward)
         if not exists:
             return rc.NOT_FOUND
         
-        userreward.expiration = attrs['expiration']
-        userreward.forsale = attrs['forsale']
+        if 'expiration' in attrs:
+            userreward.expiration = attrs['expiration']
+        if 'forsale' in attrs:
+            userreward.forsale = attrs['forsale']
+
+        userreward.save()
 
         return rc.ALL_OK
 
-    @throttle(10, 60) # allow 5 times in 1 minute
+    #@throttle(10, 60) # allow 5 times in 1 minute
     def delete(self, request, user_id):
         """
         Delete all rewards belong to a user_id
@@ -403,13 +409,13 @@ class ReferralActivityHandler(SharedHandler):
         """
         return ReferralActivity.objects.filter(referer__id=user_id)
    
-    @throttle(10, 60) # allow 5 times in 1 minute
+    #@throttle(10, 60) # allow 5 times in 1 minute
     def create(self, request, user_id):
         """
         Creates a new referralActivity.
         """
         attrs = self.flatten_dict(request.data)
-        print attrs
+        #print attrs
         
         user, _, _ = self.idsValidation(user_id, None, None)
         
@@ -423,7 +429,7 @@ class ReferralActivityHandler(SharedHandler):
         
         return rc.CREATED
 
-    @throttle(10, 60) # allow 5 times in 1 minute
+    #@throttle(10, 60) # allow 5 times in 1 minute
     def delete(self, request, user_id):
         """
         Delete all referral activities by this user
@@ -440,7 +446,7 @@ class ReferralActivityHandler(SharedHandler):
 class PurchaseActivityHandler(SharedHandler):
     allowed_methods = ('GET', 'POST', 'DELETE')
     model = PurchaseActivity
-    fields = ('time', ('merchant', ('name')), 'dollar_amount', 'description')
+    fields = ('time', ('merchant', ('name',)), 'dollar_amount', 'description')
 
     def read(self, request, user_id):
         """
@@ -448,15 +454,19 @@ class PurchaseActivityHandler(SharedHandler):
         """
         return PurchaseActivity.objects.filter(user__id=user_id)
    
-    @throttle(10, 60) # allow 5 times in 1 minute
+    #@throttle(10, 60) # allow 5 times in 1 minute
     def create(self, request, user_id):
         """
         Makes a purchase
         """
         attrs = self.flatten_dict(request.data)
-        print attrs
+        #print attrs
         
-        user, _, merchant = self.idsValidation(user_id, None, attrs['merchant_id'])
+        if attrs.get('merchant'):
+            mid = attrs.get('merchant').get('id')
+        else:
+            mid = None
+        user, _, merchant = self.idsValidation(user_id, None, mid)
         
         #insert purchase activity
         purchase = PurchaseActivity()
@@ -483,7 +493,7 @@ class PurchaseActivityHandler(SharedHandler):
 
         return rc.CREATED
 
-    @throttle(10, 60) # allow 5 times in 1 minute
+    #@throttle(10, 60) # allow 5 times in 1 minute
     def delete(self, request, user_id):
         """
         Delete all purchase activities by this user
@@ -507,15 +517,15 @@ class RedeemActivityHandler(SharedHandler):
         """
         return RewardActivity.objects.filter(from_user__id__exact=user_id, activity_type__exact=1)
    
-    @throttle(10, 60) # allow 5 times in 1 minute
+    #@throttle(10, 60) # allow 5 times in 1 minute
     def create(self, request, user_id):
         """
         Redeem a reward
         """
         attrs = self.flatten_dict(request.data)
-        print attrs
+        #print attrs
         
-        user, reward, _ = self.idsValidation(user_id, attrs['reward_id'], None)
+        user, reward, _ = self.idsValidation(user_id, attrs['reward']['id'], None)
         
         urHandler = UserRewardHandler()
         exists, userreward = urHandler.existsAndActive(user, reward)
@@ -527,7 +537,7 @@ class RedeemActivityHandler(SharedHandler):
         rewardActivity.time = datetime.now()
         rewardActivity.reward = reward
         rewardActivity.activity_type = 1
-        rewardActivity.description = attrs['description']
+        rewardActivity.description = attrs.get('description')
         rewardActivity.points_value = reward.equiv_points
         rewardActivity.from_user = user
         rewardActivity.to_user = None
@@ -538,7 +548,7 @@ class RedeemActivityHandler(SharedHandler):
 
         return rc.CREATED
 
-    @throttle(10, 60) # allow 5 times in 1 minute
+    #@throttle(10, 60) # allow 5 times in 1 minute
     def delete(self, request, user_id):
         """
         Delete redeem-reward activities initiated by this user
@@ -558,21 +568,21 @@ class TradeActivityHandler(SharedHandler):
 
     def read(self, request, user_id):
         """
-        Returns trade-reward activities initiated by this user
+        Returns trade-reward activities initiated by this user: buying activities by this user
         """
-        return RewardActivity.objects.filter(from_user__id__exact=user_id, activity_type__exact=2)
+        return RewardActivity.objects.filter(to_user__id__exact=user_id, activity_type__exact=2)
    
-    @throttle(10, 60) # allow 5 times in 1 minute
+    #@throttle(10, 60) # allow 5 times in 1 minute
     def create(self, request, user_id):
         """
         Buy a reward
         """
         attrs = self.flatten_dict(request.data)
-        print attrs
+        #print attrs
         
-        user, reward, _ = self.idsValidation(user_id, attrs['reward_id'], None)
+        user, reward, _ = self.idsValidation(user_id, attrs['reward']['id'], None)
         
-        sellerId = attrs['from_user_id']
+        sellerId = attrs['from_user']['id']
         seller = self.userById(sellerId)
         if seller is None:
             raise LookupError, 'No Seller with this id exists: '+sellerId
@@ -594,7 +604,7 @@ class TradeActivityHandler(SharedHandler):
         rewardActivity.time = datetime.now()
         rewardActivity.reward = reward
         rewardActivity.activity_type = 2
-        rewardActivity.description = attrs['description']
+        rewardActivity.description = attrs.get('description')
         rewardActivity.points_value = reward.equiv_points
         rewardActivity.from_user = seller
         rewardActivity.to_user = user
@@ -621,10 +631,10 @@ class TradeActivityHandler(SharedHandler):
 
         return rc.CREATED
 
-    @throttle(10, 60) # allow 5 times in 1 minute
+    #@throttle(10, 60) # allow 5 times in 1 minute
     def delete(self, request, user_id):
         """
-        Delete reward activities initiated by this user and a particular activity_type
+        Delete trade-reward activities initiated by this user: buying activities by this user
         """
         try:
             rewardActivities = RewardActivity.objects.filter(to_user__id__exact=user_id, activity_type__exact=2)
@@ -645,17 +655,17 @@ class GiftActivityHandler(SharedHandler):
         """
         return RewardActivity.objects.filter(from_user__id__exact=user_id, activity_type__exact=3)
    
-    @throttle(10, 60) # allow 5 times in 1 minute
+    #@throttle(10, 60) # allow 5 times in 1 minute
     def create(self, request, user_id):
         """
         Gift out a reward
         """
         attrs = self.flatten_dict(request.data)
-        print attrs
+        #print attrs
         
-        user, reward, _ = self.idsValidation(user_id, attrs['reward_id'], None)
+        user, reward, _ = self.idsValidation(user_id, attrs['reward']['id'], None)
         
-        user2Id = attrs['to_user_id']
+        user2Id = attrs['to_user']['id']
         user2 = self.userById(user2Id)
         if user2 is None:
             raise LookupError, 'No User with this to_user_id exists: '+user2Id
@@ -685,7 +695,7 @@ class GiftActivityHandler(SharedHandler):
 
         return rc.CREATED
 
-    @throttle(10, 60) # allow 5 times in 1 minute
+    #@throttle(10, 60) # allow 5 times in 1 minute
     def delete(self, request, user_id):
         """
         Delete reward activities initiated by this user and a particular activity_type
@@ -713,16 +723,15 @@ class MerchantHandler(SharedHandler):
         if merchant_id:
             return base.get(id=merchant_id)
         else:
-            #query = "SELECT (acos(sin(latitude * 0.017453292) * sin(%s * 0.017453292) + cos(latitude * 0.017453292) * cos(%s * 0.017453292) * cos((longitude - %s) * 0.017453292)) * 3958.565474745) AS distance, * FROM server_merchant HAVING distance <= %s ORDER BY distance ASC"
+            query = "SELECT (acos(sin(latitude * 0.017453292) * sin(%s * 0.017453292) + cos(latitude * 0.017453292) * cos(%s * 0.017453292) * cos((longitude - %s) * 0.017453292)) * 3958.565474745) AS distance, * FROM server_merchant WHERE distance <= %s ORDER BY distance ASC" % (latitude, latitude, longitude, distance)
             #return base.raw(query, [latitude, latitude, longitude, distance])
-            query = "select (sin(%s * 0.017453292) + cos(%s * 0.017453292)) as distance, * from server_merchant where distance > 0 order by distance asc" % (latitude, longitude)
-            print query
+            #print query
             r = base.raw(query)
-            for i in r:
-                print "%s miles for %s." % (i.distance, i.name)
+            #for i in r:
+            #    print "%s miles for %s." % (i.distance, i.name)
             return r
    
-    @throttle(10, 60) # allow 5 times in 1 minute
+    #@throttle(10, 60) # allow 5 times in 1 minute
     def create(self, request):
         """
         Creates a new merchant.
@@ -741,7 +750,7 @@ class MerchantHandler(SharedHandler):
         except Exception as inst:
             print inst
    
-    @throttle(10, 60) # allow 5 times in 1 minute
+    #@throttle(10, 60) # allow 5 times in 1 minute
     def update(self, request, merchant_id):
         """
         Update a merchant's information
@@ -798,8 +807,8 @@ class RewardHandler(SharedHandler):
         else:
             return Reward.objects.filter(merchant__id=merchant_id)
    
-    @throttle(10, 60) # allow 5 times in 1 minute
-    def create(self, request, merchant_id):
+    #@throttle(10, 60) # allow 5 times in 1 minute
+    def create(self, request, merchant_id, reward_id=None):
         """
         Creates a new Reward.
         """
@@ -812,9 +821,9 @@ class RewardHandler(SharedHandler):
         try:
             Reward.objects.get(name__iexact=name, merchant__id=merchant.id)
             return rc.DUPLICATE_ENTRY
-        except RewardProgram.MultipleObjectsReturned:
+        except Reward.MultipleObjectsReturned:
             return rc.DUPLICATE_ENTRY
-        except RewardProgram.DoesNotExist:
+        except Reward.DoesNotExist:
             pass
         
         reward = Reward()
@@ -832,7 +841,7 @@ class RewardHandler(SharedHandler):
         
         return rc.CREATED
    
-    @throttle(10, 60) # allow 5 times in 1 minute
+    #@throttle(10, 60) # allow 5 times in 1 minute
     def update(self, request, merchant_id, reward_id):
         """
         Update a Reward's information
@@ -880,32 +889,36 @@ class RewardProgramHandler(SharedHandler):
         else:
             return RewardProgram.objects.filter(merchant__id=merchant_id)
    
-    @throttle(10, 60) # allow 5 times in 1 minute
-    def create(self, request, merchant_id):
+    #@throttle(10, 60) # allow 5 times in 1 minute
+    def create(self, request, merchant_id, program_id=None):
         """
         Creates a new RewardProgram.
         """
         attrs = self.flatten_dict(request.data)
         #print attrs
         
-        _, reward, merchant = self.idsValidation(None, attrs['reward_id'], merchant_id)
+        if attrs.get('reward'):
+            rewardId = attrs['reward'].get('id')
+        else:
+            rewardId = None
+        _, reward, merchant = self.idsValidation(None, rewardId, merchant_id)
         
         name = attrs['name']
         progType = int(attrs['prog_type'])
         try:
-            RewardProgram.objects.get(name__iexact=name, merchant__id=merchant.id, prog_type__exact=progType, reward__id=reward.id)
+            RewardProgram.objects.get(name__iexact=name, merchant__id=merchant.id, prog_type__exact=progType, reward__id=rewardId)
             return rc.DUPLICATE_ENTRY
         except RewardProgram.MultipleObjectsReturned:
             return rc.DUPLICATE_ENTRY
         except RewardProgram.DoesNotExist:
             pass
         
-        if attrs['start_time']:
-            start = datetime.strptime(attrs['start_time'], '%m/%d/%Y')
+        if attrs.get('start_time'):
+            start = datetime.strptime(attrs['start_time'], '%Y-%m-%d')
         else:
             start = None
-        if attrs['end_time']:
-            end = datetime.strptime(attrs['end_time'], '%m/%d/%Y')
+        if attrs.get('end_time'):
+            end = datetime.strptime(attrs['end_time'], '%Y-%m-%d')
         else:
             end = None
         program = RewardProgram()
@@ -922,7 +935,7 @@ class RewardProgramHandler(SharedHandler):
         
         return rc.CREATED
    
-    @throttle(10, 60) # allow 5 times in 1 minute
+    #@throttle(10, 60) # allow 5 times in 1 minute
     def update(self, request, merchant_id, program_id):
         """
         Update a RewardProgram's information
@@ -932,9 +945,12 @@ class RewardProgramHandler(SharedHandler):
 
         try:
             program = RewardProgram.objects.get(id=program_id)
-            if 'reward_id' in attrs:
-                rewardId = int(attrs['reward_id'])
-                if program.reward.id != rewardId:
+            if attrs.get('reward'):
+                rewardId = attrs['reward'].get('id')
+            else:
+                rewardId = None
+            if rewardId:
+                if program.reward.id != int(rewardId):
                     reward = self.rewardById(rewardId)
                     attrs['reward'] = reward
                     

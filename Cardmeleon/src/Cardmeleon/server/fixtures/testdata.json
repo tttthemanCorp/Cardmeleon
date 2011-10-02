@@ -52,9 +52,9 @@
     "model": "server.userprogress", 
     "fields": {
       "merchant": 2, 
-      "cur_times": 3, 
+      "cur_times": 200, 
       "user": 2, 
-      "cur_dollar_amt": "106.5"
+      "cur_dollar_amt": "206.5"
     }
   }, 
   {
