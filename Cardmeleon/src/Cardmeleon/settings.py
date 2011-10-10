@@ -130,6 +130,8 @@ REFERRAL_BONUS = 100
 ACCOUNT_ACTIVATION_DAYS = 7
 EMAIL_BACKEND = 'django.core.mail.backends.console.EmailBackend'
 LOGIN_REDIRECT_URL = '/acct/profile/'
+AUTH_PROFILE_MODULE = 'server.UserProfile'
+#AUTHENTICATION_BACKENDS = ('django.contrib.auth.backends.ModelBackend',)
 #TEST_RUNNER = 'django.test.simple.DjangoTestSuiteRunner'
 
 

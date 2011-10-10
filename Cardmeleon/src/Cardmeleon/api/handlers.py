@@ -10,8 +10,9 @@ from datetime import datetime
 from decimal import Decimal
 from django.db.models import Q
 from datetime import date
+from django.contrib.auth.models import User
 
-from Cardmeleon.server.models import User, UserPoint, UserReward, UserPref, ReferralActivity, PurchaseActivity, RewardActivity, Merchant, Reward, RewardProgram, UserProgress
+from Cardmeleon.server.models import UserProfile, UserPoint, UserReward, UserPref, ReferralActivity, PurchaseActivity, RewardActivity, Merchant, Reward, RewardProgram, UserProgress
 from Cardmeleon.settings import REFERRAL_BONUS
 
 
@@ -20,17 +21,48 @@ class SharedHandler(BaseHandler):
     common base handler for all cardmeleon rest handlers
     """
     
+    def updateModel(self, model, dict):
+        for k,v in dict.iteritems():
+            if hasattr(model, k):
+                try:
+                    setattr( model, k, v )
+                except:
+                    pass
+    
+    def checkPermission(self, request, target):
+        if 'userId' in target:
+            userId = int(target['userId'])
+            if request.user:
+                if request.user.id == userId:
+                    return request.user
+                else:
+                    if request.user.is_superuser:
+                        return User.objects.get(id=userId)
+                    else:
+                        raise RuntimeError, "Permission Denied: Authorization Error"
+            else:  # if not authenticated, assume no authentication needed
+                return User.objects.get(id=userId)
+    
+#    def userExists(self, data):
+#        try:
+#            if 'username' in data:
+#                a = Q(username__iexact=data.get('username'))
+#            else:
+#                a = Q(username__isnull=True)
+#            if 'facebook' in data:
+#                b = Q(facebook__iexact=data.get('facebook'))
+#            else:
+#                b = Q(facebook__isnull=True)
+#            User.objects.get(a & b)
+#            return True
+#        except User.MultipleObjectsReturned:
+#            return True
+#        except User.DoesNotExist:
+#            return False
+        
     def userExists(self, data):
         try:
-            if data.get('username'):
-                a = Q(username__iexact=data.get('username'))
-            else:
-                a = Q(username__isnull=True)
-            if data.get('facebook'):
-                b = Q(facebook__iexact=data.get('facebook'))
-            else:
-                b = Q(facebook__isnull=True)
-            User.objects.get(a & b)
+            User.objects.get(username__iexact=data.get('username'))
             return True
         except User.MultipleObjectsReturned:
             return True
@@ -44,9 +76,16 @@ class SharedHandler(BaseHandler):
         except User.DoesNotExist:
             return None
         
+#    def userByLogin(self, login):
+#        try:
+#            user = User.objects.get(Q(username__iexact=login) | Q(facebook__iexact=login))
+#            return user
+#        except User.DoesNotExist:
+#            return None
+        
     def userByLogin(self, login):
         try:
-            user = User.objects.get(Q(username__iexact=login) | Q(facebook__iexact=login))
+            user = User.objects.get(username__iexact=login)
             return user
         except User.DoesNotExist:
             return None
@@ -101,34 +140,41 @@ class SharedHandler(BaseHandler):
         return (user, reward, merchant)
 
 
+class LoginHandler(SharedHandler):
+    allowed_methods = ('GET',)
+
+    def read(self, request):
+        """
+        authenticate a user based on credentials
+        """
+        return {'id':request.user.id}
+        
+        
 class UserHandler(SharedHandler):
     allowed_methods = ('GET', 'POST', 'PUT', 'DELETE')
     model = User
-    fields = ('username','facebook','email','phone',('referer',('id',)))
+    fields = ('username','email','first_name','last_name')
 
     def read(self, request, user_id=None):
         """
         Returns a single user if `user_id` is given,
-        otherwise a list of all users.
+        otherwise authenticate a user based on credentials
         """
-        base = User.objects
-
         if user_id:
-            user = base.get(id=user_id)
-            
+            #user = User.objects.get(id=user_id)
+            user = self.checkPermission(request, {'userId':user_id})
+            userprofile = user.get_profile()
             try:
                 userpoint = UserPoint.objects.get(user__id=user_id)
             except UserPoint.DoesNotExist:
                 userpoint = None
-            try:
-                userprogress = UserProgress.objects.get(user__id=user_id)
-            except UserProgress.DoesNotExist:
-                userprogress = None
+                
+            userprogresses = UserProgress.objects.filter(user__id=user_id)
             userrewards = UserReward.objects.filter(user__id=user_id)
             self.fields = None
-            return {"user":user, "userprogress":userprogress, "userpoint":userpoint, "userrewards":userrewards}
+            return {"user":user, "userprofile":userprofile, "userprogresses":userprogresses, "userpoint":userpoint, "userrewards":userrewards}
         else:
-            return base.all() # Or base.filter(...)
+            return {"user_count":User.objects.all().count()};
    
     #@throttle(10, 60) # allow 5 times in 1 minute
     def create(self, request):
@@ -143,8 +189,12 @@ class UserHandler(SharedHandler):
         
         #insert new user
         user = User()
-        user.updateValues(**attrs)
+        self.updateModel(user, attrs)
         user.save()
+        
+        userprofile = UserProfile()
+        self.updateModel(userprofile, attrs)
+        userprofile.user = user
         
         #update referral activity table
         refererDict = attrs.get('referer')
@@ -155,9 +205,8 @@ class UserHandler(SharedHandler):
             if refererName:
                 referer = self.userByLogin(refererName)
                 if referer:
+                    userprofile.referer = referer
                     refereeName = user.username
-                    if not refereeName:
-                        refereeName = user.facebook
                     try:
                         #TODO - the following query may fail to get the referral activity record.  revisit it later for a better way
                         referActivity = ReferralActivity.objects.filter(referer__id=referer.id, referee_name__iexact=refereeName).latest('time')
@@ -169,6 +218,9 @@ class UserHandler(SharedHandler):
                     #update UserPoint for referral bonus
                     userPoint = UserPoint.objects.get(user__id=referer.id)
                     userPoint.points += REFERRAL_BONUS
+                    
+
+        userprofile.save()
         
         return rc.CREATED
    
@@ -177,7 +229,8 @@ class UserHandler(SharedHandler):
         """
         Update a user's information
         """
-        user = User.objects.get(id=user_id)
+        #user = User.objects.get(id=user_id)
+        user = self.checkPermission(request, {'userId':user_id})
 
         attrs = self.flatten_dict(request.data)
         #print attrs
@@ -190,9 +243,12 @@ class UserHandler(SharedHandler):
         if "referer" in attrs:
             del attrs["referer"]
             
-        user.updateValues(**attrs)
+        self.updateModel(user, attrs)
+        userprofile = user.get_profile()
+        self.updateModel(userprofile, attrs)
             
         user.save()
+        userprofile.save()
 
         return rc.ALL_OK
 
@@ -200,8 +256,11 @@ class UserHandler(SharedHandler):
         """
         Delete a user
         """
-        user = User.objects.get(id=user_id)
-
+        #user = User.objects.get(id=user_id)
+        user = self.checkPermission(request, {'userId':user_id})
+        userprofile = user.get_profile()
+        
+        userprofile.delete()
         user.delete()
 
         return rc.DELETED # returns HTTP 204
@@ -283,7 +342,7 @@ class UserPrefHandler(SharedHandler):
 class UserRewardHandler(SharedHandler):
     allowed_methods = ('GET', 'POST', 'PUT', 'DELETE')
     model = UserReward
-    fields = (('user', ('id','username','facebook')), 'reward', 'expiration', 'forsale')
+    fields = (('user', ('id','username')), 'reward', 'expiration', 'forsale')
 
     def existsAndActive(self, user, reward):
         exists, userreward = self.exists(user, reward)
@@ -509,7 +568,7 @@ class PurchaseActivityHandler(SharedHandler):
 #RedeemActivityHandler
 class RedeemActivityHandler(SharedHandler):
     allowed_methods = ('GET', 'POST', 'DELETE')
-    model = RewardActivity
+    #model = RewardActivity
 
     def read(self, request, user_id):
         """
@@ -647,7 +706,7 @@ class TradeActivityHandler(SharedHandler):
 #GiftActivityHandler
 class GiftActivityHandler(SharedHandler):
     allowed_methods = ('GET', 'POST', 'DELETE')
-    model = RewardActivity
+    #model = RewardActivity
 
     def read(self, request, user_id):
         """
@@ -744,7 +803,7 @@ class MerchantHandler(SharedHandler):
                 return rc.DUPLICATE_ENTRY
             else:
                 merchant = Merchant()
-                merchant.updateValues(**attrs)
+                self.updateModel(merchant, attrs)
                 merchant.save()
                 return rc.CREATED
         except Exception as inst:
@@ -760,7 +819,7 @@ class MerchantHandler(SharedHandler):
         attrs = self.flatten_dict(request.data)
         #print attrs
         
-        merchant.updateValues(**attrs)
+        self.updateModel(merchant, attrs)
             
         merchant.save()
 
@@ -783,6 +842,11 @@ class UserPointHandler(SharedHandler):
     model = UserPoint
     fields = ('points',)
     
+#UserProfileHandler
+class UserProfileHandler(SharedHandler):
+    allowed_methods = ('GET', 'POST', 'PUT', 'DELETE')
+    model = UserProfile
+    fields = ('facebook','deviceid','phone',('referer',('id',)))
 
 #UserProgressHandler
 class UserProgressHandler(SharedHandler):
@@ -851,7 +915,9 @@ class RewardHandler(SharedHandler):
 
         try:
             reward = Reward.objects.get(id=reward_id)
-            reward.updateValues(**attrs)
+            if "merchant" in attrs:
+                del attrs["merchant"]
+            self.updateModel(reward, attrs)
             reward.save()
             
             return rc.ALL_OK
@@ -953,8 +1019,10 @@ class RewardProgramHandler(SharedHandler):
                 if program.reward.id != int(rewardId):
                     reward = self.rewardById(rewardId)
                     attrs['reward'] = reward
-                    
-            program.updateValues(**attrs)
+            
+            if "merchant" in attrs:
+                del attrs["merchant"]        
+            self.updateModel(program, attrs)
             program.save()
             
             return rc.ALL_OK

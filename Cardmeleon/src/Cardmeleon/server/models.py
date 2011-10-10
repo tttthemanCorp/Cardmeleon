@@ -1,29 +1,19 @@
 from django.db import models
+from django.contrib.auth.models import User
+
 
 # Create your models here.
     
-class User(models.Model):
-    username = models.CharField(max_length=30,null=True)
+class UserProfile(models.Model):
+    user = models.OneToOneField(User)
+    deviceid = models.CharField(max_length=100,null=True)
     facebook = models.EmailField(max_length=75,null=True)
-    email = models.EmailField(max_length=75,null=True)
     phone = models.CharField(max_length=20,null=True)
-    referer = models.ForeignKey('self',null=True)
-    
-    def updateValues(self, **data):
-        if 'username' in data:
-            self.username = data['username']
-        if 'facebook' in data:
-            self.facebook_id = data['facebook']
-        if 'email' in data:
-            self.email = data['email']
-        if 'phone' in data:
-            self.phone = data['phone']
-        #if 'referer' in data:
-        #    self.referer = data['referer']
-  
+    referer = models.ForeignKey(User,related_name='User.referer',null=True)
+
     def __unicode__(self):
-        return "username:{0}, facebook:{1}, email:{2}, phone:{3}, referer:{4}".format(
-                self.username, self.facebook, self.email, self.phone, self.referer.id)
+        return "username:{0}, facebook:{1}, deviceid:{2}, phone:{3}, referer:{4}".format(
+                self.user.username, self.facebook, self.email, self.phone, self.referer.id)
     
 class UserPoint(models.Model):
     user = models.OneToOneField(User)
@@ -33,7 +23,7 @@ class UserPoint(models.Model):
         return "username:{0}, points:{1}".format(self.user.username, self.points)
 
 class UserProgress(models.Model):
-    user = models.OneToOneField(User)
+    user = models.ForeignKey(User)
     merchant = models.ForeignKey('Merchant')
     cur_dollar_amt = models.DecimalField(max_digits=10,decimal_places=2)
     cur_times = models.IntegerField()
@@ -60,21 +50,21 @@ class Merchant(models.Model):
     longitude = models.FloatField()
     latitude = models.FloatField()
     
-    def updateValues(self, **data):
-        if 'name' in data:
-            self.name = data['name']
-        if 'logo' in data:
-            self.logo = data['logo']
-        if 'email' in data:
-            self.email = data['email']
-        if 'phone' in data:
-            self.phone = data['phone']
-        if 'address' in data:
-            self.address = data['address']
-        if 'longitude' in data:
-            self.longitude = data['longitude']
-        if 'latitude' in data:
-            self.latitude = data['latitude']
+#    def updateValues(self, **data):
+#        if 'name' in data:
+#            self.name = data['name']
+#        if 'logo' in data:
+#            self.logo = data['logo']
+#        if 'email' in data:
+#            self.email = data['email']
+#        if 'phone' in data:
+#            self.phone = data['phone']
+#        if 'address' in data:
+#            self.address = data['address']
+#        if 'longitude' in data:
+#            self.longitude = data['longitude']
+#        if 'latitude' in data:
+#            self.latitude = data['latitude']
   
     def __unicode__(self):
         return "name:{0}, logo:{1}, email:{2}, phone:{3}, address:{4}, longitude:{5}, latitude:{6}".format(
@@ -90,24 +80,24 @@ class RewardProgram(models.Model):
     end_time = models.DateField(null=True)  # program end time
     status = models.SmallIntegerField()  # active|inactive|paused
     
-    def updateValues(self, **data):
-        """
-        Update everything except merchant
-        """
-        if 'name' in data:
-            self.name = data['name']
-        if 'prog_type' in data:
-            self.prog_type = data['prog_type']
-        if 'reward_trigger' in data:
-            self.reward_trigger = data['reward_trigger']
-        if 'start_time' in data:
-            self.start_time = data['start_time']
-        if 'end_time' in data:
-            self.end_time = data['end_time']
-        if 'status' in data:
-            self.status = data['status']
-        if 'reward' in data:
-            self.reward = data['reward']
+#    def updateValues(self, **data):
+#        """
+#        Update everything except merchant
+#        """
+#        if 'name' in data:
+#            self.name = data['name']
+#        if 'prog_type' in data:
+#            self.prog_type = data['prog_type']
+#        if 'reward_trigger' in data:
+#            self.reward_trigger = data['reward_trigger']
+#        if 'start_time' in data:
+#            self.start_time = data['start_time']
+#        if 'end_time' in data:
+#            self.end_time = data['end_time']
+#        if 'status' in data:
+#            self.status = data['status']
+#        if 'reward' in data:
+#            self.reward = data['reward']
     
 class Reward(models.Model):
     name = models.CharField(max_length=30)
@@ -120,26 +110,26 @@ class Reward(models.Model):
     expire_in_years = models.IntegerField(null=True)
     status = models.SmallIntegerField()  # active|cancelled
     
-    def updateValues(self, **data):
-        """
-        Update everything except merchant
-        """
-        if 'name' in data:
-            self.name = data['name']
-        if 'description' in data:
-            self.description = data['description']
-        if 'equiv_dollar' in data:
-            self.equiv_dollar = data['equiv_dollar']
-        if 'equiv_points' in data:
-            self.equiv_points = data['equiv_points']
-        if 'expire_in_days' in data:
-            self.expire_in_days = data['expire_in_days']
-        if 'expire_in_months' in data:
-            self.expire_in_months = data['expire_in_months']
-        if 'expire_in_years' in data:
-            self.expire_in_years = data['expire_in_years']
-        if 'status' in data:
-            self.status = data['status']
+#    def updateValues(self, **data):
+#        """
+#        Update everything except merchant
+#        """
+#        if 'name' in data:
+#            self.name = data['name']
+#        if 'description' in data:
+#            self.description = data['description']
+#        if 'equiv_dollar' in data:
+#            self.equiv_dollar = data['equiv_dollar']
+#        if 'equiv_points' in data:
+#            self.equiv_points = data['equiv_points']
+#        if 'expire_in_days' in data:
+#            self.expire_in_days = data['expire_in_days']
+#        if 'expire_in_months' in data:
+#            self.expire_in_months = data['expire_in_months']
+#        if 'expire_in_years' in data:
+#            self.expire_in_years = data['expire_in_years']
+#        if 'status' in data:
+#            self.status = data['status']
     
 class PurchaseActivity(models.Model):
     user = models.ForeignKey(User)
