@@ -158,7 +158,7 @@ class UserHandler(SharedHandler):
     def read(self, request, user_id=None):
         """
         Returns a single user if `user_id` is given,
-        otherwise authenticate a user based on credentials
+        otherwise count total number of users
         """
         if user_id:
             #user = User.objects.get(id=user_id)
