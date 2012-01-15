@@ -67,7 +67,7 @@ urlpatterns = patterns('',
    # Delete: delete 1 user ;
    url(r'^users/(?P<user_id>\d+)', user_handler, {'emitter_format':'json'}),
    # Get: get total number of users ;  
-   # Post: create a new user  ;  
+   # Post: sign up a new user  ;  
    url(r'^users$', user_handler, {'emitter_format':'json'}),
    # Get: authenticate 1 user based on credentials, and return user id ;  
    url(r'^auth$', login_handler, {'emitter_format':'json'}),

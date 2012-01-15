@@ -199,26 +199,21 @@ class UserHandler(SharedHandler):
         #update referral activity table
         refererDict = attrs.get('referer')
         if refererDict:
-            refererName = refererDict.get('username')
-            if not refererName:
-                refererName = refererDict.get('facebook')
-            if refererName:
-                referer = self.userByLogin(refererName)
-                if referer:
-                    userprofile.referer = referer
-                    refereeName = user.username
-                    try:
-                        #TODO - the following query may fail to get the referral activity record.  revisit it later for a better way
-                        referActivity = ReferralActivity.objects.filter(referer__id=referer.id, referee_name__iexact=refereeName).latest('time')
-                        referActivity.referee = user
-                        referActivity.referee_join_time = datetime.now()
-                        referActivity.save()
-                    except ReferralActivity.DoesNotExist:
-                        pass
-                    #update UserPoint for referral bonus
-                    userPoint = UserPoint.objects.get(user__id=referer.id)
+            referCode = refererDict.get('refer_code')
+            if referCode:
+                try:
+                    referActivity = ReferralActivity.objects.get(id=referCode)
+                    referActivity.referee = user
+                    referActivity.referee_join_time = datetime.now()
+                    referActivity.save()
+                    # update user profile with refer
+                    userprofile.referer = referActivity.referer
+                    # update UserPoint for referral bonus
+                    userPoint = UserPoint.objects.get(user__id=userprofile.referer.id)
                     userPoint.points += REFERRAL_BONUS
-                    
+                    userPoint.save()
+                except ReferralActivity.DoesNotExist:
+                    pass
 
         userprofile.save()
         
@@ -473,20 +468,24 @@ class ReferralActivityHandler(SharedHandler):
         """
         Creates a new referralActivity.
         """
-        attrs = self.flatten_dict(request.data)
+        #attrs = self.flatten_dict(request.data)
+        attrs = request.data
         #print attrs
         
         user, _, _ = self.idsValidation(user_id, None, None)
         
-        #insert referral activity
-        refer = ReferralActivity()
-        refer.time = datetime.now()
-        refer.referee_name = attrs['referee_name']
-        refer.refer_method = attrs['refer_method']
-        refer.referer = user
-        refer.save()
+        resp = []
+        for item in attrs:
+            #insert referral activity
+            refer = ReferralActivity()
+            refer.time = datetime.now()
+            refer.referee_name = item['referee_name']
+            refer.refer_method = item['refer_method']
+            refer.referer = user
+            refer.save()
+            resp.append({"referee_name":refer.referee_name, "refer_code":refer.pk})
         
-        return rc.CREATED
+        return resp
 
     #@throttle(10, 60) # allow 5 times in 1 minute
     def delete(self, request, user_id):

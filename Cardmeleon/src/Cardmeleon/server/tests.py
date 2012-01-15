@@ -157,7 +157,7 @@ class ServerTest(TestCase):
         self.assertEqual(10, r['userrewards'][1]['reward']['equiv_points'], '')
         self.assertEqual(True, r['userrewards'][1]['forsale'], '')
         
-        jsonstr = json.dumps({"username":"xin","email":"xin@test.com","phone":"4082538985","referer":{"username":"testuser"}})
+        jsonstr = json.dumps({"username":"xin","email":"xin@test.com","phone":"4082538985","referer":{"refer_code":1}})
         response = c.post("/api/users", jsonstr, 'application/json', **self.extra)
         #print response.content
         self.assertEqual('Created', response.content, '')
@@ -1028,28 +1028,61 @@ class ServerTest(TestCase):
         Tests referral activity handler
         """
         c = Client()
-        jsonstr = json.dumps({"referee_name":"xin", "refer_method":1})
+        
+        """
+        [
+            {"referee_name":"Jun Lu", "refer_code":1},
+            {"referee_name":"Yi Li", "refer_code":2},
+            {"referee_name":"Xin Han", "refer_code":3}
+        ]
+        """
+        jsonstr = json.dumps([
+                              {"referee_name":"Jun Lu", "refer_method":1},
+                              {"referee_name":"Yi Li", "refer_method":1},
+                              {"referee_name":"Xin Han", "refer_method":1}
+                            ]);
         response = c.post('/api/users/2/refer', jsonstr, 'application/json', **self.extra)
         #print response.content
-        self.assertEqual('Created', response.content, '')
+        r = json.loads(response.content)
+        self.assertEqual(1, r[0]['refer_code'], '')
+        self.assertEqual(2, r[1]['refer_code'], '')
+        self.assertEqual(3, r[2]['refer_code'], '')
         
         '''
         [
             {
-                "referee_name": "xin", 
+                "referee_name": "Xin Han", 
                 "referee_join_time": null, 
                 "refer_method": 1, 
-                "time": "2011-10-02 02:46:45"
+                "time": "2012-01-15 03:35:29"
+            }, 
+            {
+                "referee_name": "Yi Li", 
+                "referee_join_time": null, 
+                "refer_method": 1, 
+                "time": "2012-01-15 03:35:29"
+            }, 
+            {
+                "referee_name": "Jun Lu", 
+                "referee_join_time": null, 
+                "refer_method": 1, 
+                "time": "2012-01-15 03:35:29"
             }
         ]
         '''
         response = c.get('/api/users/2/refer', **self.extra)
         #print response.content
         r = json.loads(response.content)
-        self.assertEqual(1, len(r), '')
-        self.assertEqual('xin', r[0]['referee_name'], '')
+        self.assertEqual(3, len(r), '')
+        self.assertEqual('Xin Han', r[0]['referee_name'], '')
         self.assertEqual(None, r[0]['referee_join_time'], '')
         self.assertEqual(1, r[0]['refer_method'], '')
+        self.assertEqual('Yi Li', r[1]['referee_name'], '')
+        self.assertEqual(None, r[1]['referee_join_time'], '')
+        self.assertEqual(1, r[1]['refer_method'], '')
+        self.assertEqual('Jun Lu', r[2]['referee_name'], '')
+        self.assertEqual(None, r[2]['referee_join_time'], '')
+        self.assertEqual(1, r[2]['refer_method'], '')
         
         response = c.delete('/api/users/2/refer', **self.extra)
         #print response.content
