@@ -741,7 +741,7 @@
       "merchant": 1, 
       "status": 1, 
       "name": "safeway loyalty program 2", 
-      "prog_type": 1, 
+      "prog_type": 0, 
       "reward_trigger": 400.0, 
       "end_time": null, 
       "reward": 2, 

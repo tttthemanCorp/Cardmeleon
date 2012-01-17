@@ -163,16 +163,24 @@ class UserHandler(SharedHandler):
         if user_id:
             #user = User.objects.get(id=user_id)
             user = self.checkPermission(request, {'userId':user_id})
+            
             userprofile = user.get_profile()
+            
             try:
                 userpoint = UserPoint.objects.get(user__id=user_id)
             except UserPoint.DoesNotExist:
                 userpoint = None
+
+            try:
+                userpref = UserPref.objects.get(user__id=user_id)
+            except UserPref.DoesNotExist:
+                userpref = None  
                 
             userprogresses = UserProgress.objects.filter(user__id=user_id)
             userrewards = UserReward.objects.filter(user__id=user_id)
+            
             self.fields = None
-            return {"user":user, "userprofile":userprofile, "userprogresses":userprogresses, "userpoint":userpoint, "userrewards":userrewards}
+            return {"pref":userpref, "user":user, "userprofile":userprofile, "userprogresses":userprogresses, "userpoint":userpoint, "userrewards":userrewards}
         else:
             return {"user_count":User.objects.all().count()};
    
@@ -770,23 +778,27 @@ class GiftActivityHandler(SharedHandler):
 class MerchantHandler(SharedHandler):
     allowed_methods = ('GET', 'POST', 'PUT', 'DELETE')
     model = Merchant
-
+    
     def read(self, request, merchant_id=None, longitude=None, latitude=None, distance=None):
         """
         Returns a single merchant if `merchant_id` is given,
-        otherwise a list of all merchants.
+        otherwise a list of nearby merchants.
         """
         base = Merchant.objects
 
         if merchant_id:
+            self.fields = ('name', 'longitude', 'phone', 'address', 'latitude', 'logo', 'email')
             return base.get(id=merchant_id)
         else:
-            query = "SELECT (acos(sin(latitude * 0.017453292) * sin(%s * 0.017453292) + cos(latitude * 0.017453292) * cos(%s * 0.017453292) * cos((longitude - %s) * 0.017453292)) * 3958.565474745) AS distance, * FROM server_merchant WHERE distance <= %s ORDER BY distance ASC" % (latitude, latitude, longitude, distance)
+            query = "SELECT (acos(sin(latitude * 0.017453292) * sin(%s * 0.017453292) + cos(latitude * 0.017453292) * cos(%s * 0.017453292) * cos((longitude - %s) * 0.017453292)) * 3958.565474745) AS distance, \
+            a.*, b.reward_trigger, '' as desc FROM server_merchant a, server_rewardprogram b \
+            WHERE a.id = b.merchant_id AND b.prog_type = 1 AND distance <= %s ORDER BY distance ASC" % (latitude, latitude, longitude, distance)
             #return base.raw(query, [latitude, latitude, longitude, distance])
             #print query
             r = base.raw(query)
             #for i in r:
             #    print "%s miles for %s." % (i.distance, i.name)
+            self.fields = ('id', 'name', 'longitude', 'phone', 'address', 'latitude', 'logo', 'email', 'distance', 'reward_trigger', 'desc')
             return r
    
     #@throttle(10, 60) # allow 5 times in 1 minute

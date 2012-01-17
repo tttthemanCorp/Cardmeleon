@@ -57,6 +57,9 @@ class ServerTest(TestCase):
         
         '''
         {
+            "pref": {
+                "nearby_radius": 40.0
+            },
             "userpoint": {
                 "points": 200
             }, 
@@ -145,8 +148,9 @@ class ServerTest(TestCase):
         response = c.get("/api/users/2", **self.extra)
         #print response.content
         r = json.loads(response.content)
-        self.assertEqual(5, len(r), '')
+        self.assertEqual(6, len(r), '')
         self.assertEqual('testuser', r['user']['username'], '')
+        self.assertEqual(40.0, r['pref']['nearby_radius'], '')
         self.assertEqual('4082323232', r['userprofile']['phone'], '')
         self.assertEqual(2, r['userprogresses'][0]['cur_times'], '')
         self.assertEqual('Safeway', r['userprogresses'][0]['merchant']['name'], '')
@@ -167,12 +171,13 @@ class ServerTest(TestCase):
         response = c.get("/api/users/4", **attrs)
         #print response.content
         r = json.loads(response.content)
-        self.assertEqual(5, len(r), '')
+        self.assertEqual(6, len(r), '')
         self.assertEqual('xin', r['user']['username'], '')
         self.assertEqual('4082538985', r['userprofile']['phone'], '')
         self.assertEqual('xin@test.com', r['user']['email'], '')
         self.assertEqual('', r['user']['first_name'], '')
         self.assertIsNone(r['userpoint'], '')
+        self.assertIsNone(r['pref'], '')
         
         jsonstr = json.dumps({"username":"xin2","email":"xin2@test.com","phone":"4082538985"})
         response = c.put("/api/users/4", jsonstr, 'application/json', **attrs)
@@ -182,7 +187,7 @@ class ServerTest(TestCase):
         response = c.get("/api/users/4", **attrs)
         #print response.content
         r = json.loads(response.content)
-        self.assertEqual(5, len(r), '')
+        self.assertEqual(6, len(r), '')
         self.assertEqual('xin', r['user']['username'], '')
         self.assertEqual('4082538985', r['userprofile']['phone'], '')
         self.assertEqual('xin2@test.com', r['user']['email'], '')
@@ -256,23 +261,31 @@ class ServerTest(TestCase):
         '''
         [
             {
+                "distance": 0.27995036763905656, 
                 "name": "Safeway", 
-                "longitude": 201.32300000000001, 
+                "longitude": 201.323, 
+                "id": 1, 
                 "phone": "6502334332", 
+                "reward_trigger": 200.0, 
                 "address": "434 abc ave, san jose, ca", 
-                "latitude": 102.45399999999999, 
+                "latitude": 102.454, 
                 "logo": "/path/to/logo.png", 
-                "email": "safeway@safeway.com"
+                "email": "safeway@safeway.com", 
+                "desc": ""
             }
         ]
         '''
-        response = c.get("/api/stores/prox/201.32,102.45,5", **self.extra)
+        response = c.get("/api/stores/prox/201.32,102.45,1", **self.extra)
         #print response.content
         r = json.loads(response.content)
         self.assertEqual(1, len(r), 'number of merchants is not 1')
         self.assertEqual('Safeway', r[0]['name'], '')
         self.assertEqual('6502334332', r[0]['phone'], '')
         self.assertEqual('/path/to/logo.png', r[0]['logo'], '')
+        self.assertEqual(1, r[0]['id'], '')
+        self.assertGreater(1.0, r[0]['distance'], '')
+        self.assertEqual(200.0, r[0]['reward_trigger'], '')
+        self.assertEqual('', r[0]['desc'], '')
         
         '''
         {
@@ -288,7 +301,7 @@ class ServerTest(TestCase):
         response = c.get("/api/stores/1", **self.extra)
         #print response.content
         r = json.loads(response.content)
-        self.assertEqual(7, len(r), 'number of merchants is not 7')
+        self.assertEqual(7, len(r), 'number of fields returned is not 7')
         self.assertEqual('Safeway', r['name'], '')
         self.assertEqual('6502334332', r['phone'], '')
         self.assertEqual('/path/to/logo.png', r['logo'], '')
@@ -440,7 +453,7 @@ class ServerTest(TestCase):
         self.assertEqual(None, r[0]['end_time'], '')
         self.assertEqual(200.0, r[0]['reward_trigger'], '')
         self.assertEqual('safeway loyalty program 2', r[1]['name'], '')
-        self.assertEqual(1, r[1]['prog_type'], '')
+        self.assertEqual(0, r[1]['prog_type'], '')
         self.assertEqual(None, r[1]['end_time'], '')
         self.assertEqual(400.0, r[1]['reward_trigger'], '')
         
