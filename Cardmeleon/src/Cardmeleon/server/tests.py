@@ -73,7 +73,10 @@ class ServerTest(TestCase):
                         "status": 1, 
                         "merchant": {
                             "name": "Safeway", 
-                            "id": 1
+                            "id": 1,
+                            "address": "434 abc ave, san jose, ca", 
+                            "longitude": 201.323, 
+                            "latitude": 102.454,
                         }, 
                         "equiv_points": 20, 
                         "name": "free bread", 
@@ -96,7 +99,10 @@ class ServerTest(TestCase):
                         "status": 1, 
                         "merchant": {
                             "name": "StarBucks", 
-                            "id": 2
+                            "id": 2,
+                            "address": "101 abc ave, san jose, ca", 
+                            "longitude": 22.323, 
+                            "latitude": 44.454,
                         }, 
                         "equiv_points": 10, 
                         "name": "free starbucks", 
@@ -158,8 +164,12 @@ class ServerTest(TestCase):
         self.assertEqual(200, r['userpoint']['points'], '')
         self.assertEqual(2, len(r['userrewards']), '')
         self.assertEqual('free bread', r['userrewards'][0]['reward']['name'], '')
+        self.assertEqual('Safeway', r['userrewards'][0]['reward']['merchant']['name'], '')
+        self.assertAlmostEqual(201.323, r['userrewards'][0]['reward']['merchant']['longitude'], '')
         self.assertEqual(10, r['userrewards'][1]['reward']['equiv_points'], '')
         self.assertEqual(True, r['userrewards'][1]['forsale'], '')
+        self.assertEqual('StarBucks', r['userrewards'][1]['reward']['merchant']['name'], '')
+        self.assertAlmostEqual(44.454, r['userrewards'][1]['reward']['merchant']['latitude'], '')
         
         jsonstr = json.dumps({"username":"xin","email":"xin@test.com","phone":"4082538985","referer":{"refer_code":1}})
         response = c.post("/api/users", jsonstr, 'application/json', **self.extra)
@@ -518,7 +528,10 @@ class ServerTest(TestCase):
             "status": 1, 
             "merchant": {
                 "name": "Safeway", 
-                "id": 1
+                "id": 1,
+                "address": "434 abc ave, san jose, ca", 
+                "longitude": 201.323, 
+                "latitude": 102.454
             }, 
             "equiv_points": 20, 
             "name": "free bread", 
@@ -538,6 +551,8 @@ class ServerTest(TestCase):
         self.assertEqual(20, r['equiv_points'], '')
         self.assertEqual(3, r['expire_in_years'], '')
         self.assertEqual('Safeway', r['merchant']['name'], '')
+        self.assertEqual('434 abc ave, san jose, ca', r['merchant']['address'], '')
+        self.assertAlmostEqual(201.323, r['merchant']['longitude'], '')
 
         '''
         [
@@ -545,7 +560,10 @@ class ServerTest(TestCase):
                 "status": 1, 
                 "merchant": {
                     "name": "Safeway", 
-                    "id": 1
+                    "id": 1,
+                    "address": "434 abc ave, san jose, ca", 
+                    "longitude": 201.323, 
+                    "latitude": 102.454
                 }, 
                 "equiv_points": 20, 
                 "name": "free bread", 
@@ -566,6 +584,9 @@ class ServerTest(TestCase):
         self.assertEqual(20, r[0]['equiv_points'], '')
         self.assertEqual(3, r[0]['expire_in_years'], '')
         self.assertEqual('Safeway', r[0]['merchant']['name'], '')
+        self.assertEqual('434 abc ave, san jose, ca', r[0]['merchant']['address'], '')
+        self.assertAlmostEqual(201.323, r[0]['merchant']['longitude'], '')
+
         
         jsonstr = json.dumps({"name":"free meal","status":1,"equiv_dollar":30,"equiv_points":30,"expire_in_days":"100","expire_in_years":"1","expire_in_months":"0","description":"free meal only"})
         response = c.post("/api/stores/1/reward", jsonstr, 'application/json', **self.extra)

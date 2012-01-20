@@ -34,7 +34,7 @@ urlpatterns = patterns('',
    url(r'^users/reward(/(?P<sell_only>forsell))?$', userreward_handler, {'emitter_format':'json'}),
    # Get: get all rewards belong to 1 user ;  
    # Post: issue a reward to 1 user for enough purchases ;  
-   # Put: change 1 user's reward values, such as mark it forsale ;  
+   # Put: change 1 user's reward values, such as mark it forsale, or change the expiration date ;  
    # Delete: delete all rewards belong to 1 user ;
    url(r'^users/(?P<user_id>\d+)/reward$', userreward_handler, {'emitter_format':'json'}),
    # Get: get all reward-redemption activities by 1 user ;  

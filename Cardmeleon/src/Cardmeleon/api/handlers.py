@@ -870,7 +870,7 @@ class UserProgressHandler(SharedHandler):
 class RewardHandler(SharedHandler):
     allowed_methods = ('GET', 'POST', 'PUT', 'DELETE')
     model = Reward
-    fields = ('id', 'name', 'description', 'equiv_dollar', 'equiv_points', 'expire_in_days', 'expire_in_months', 'expire_in_years', 'status', ('merchant', ('id', 'name')))
+    fields = ('id', 'name', 'description', 'equiv_dollar', 'equiv_points', 'expire_in_days', 'expire_in_months', 'expire_in_years', 'status', ('merchant', ('id', 'name', 'address', 'longitude', 'latitude')))
 
     def read(self, request, merchant_id, reward_id=None):
         """
