@@ -656,8 +656,11 @@ class ServerTest(TestCase):
                 "reward": {
                     "status": 1, 
                     "merchant": {
+                        "latitude": 44.454, 
+                        "id": 2, 
                         "name": "StarBucks", 
-                        "id": 2
+                        "longitude": 22.323, 
+                        "address": "101 abc ave, san jose, ca"
                     }, 
                     "equiv_points": 10, 
                     "name": "free starbucks", 
@@ -679,8 +682,11 @@ class ServerTest(TestCase):
                 "reward": {
                     "status": 1, 
                     "merchant": {
+                        "latitude": 102.454, 
+                        "id": 1, 
                         "name": "Safeway", 
-                        "id": 1
+                        "longitude": 201.323, 
+                        "address": "434 abc ave, san jose, ca"
                     }, 
                     "equiv_points": 20, 
                     "name": "free bread", 
@@ -705,11 +711,15 @@ class ServerTest(TestCase):
         self.assertEqual(10, r[0]['reward']['equiv_points'], '')
         self.assertEqual(True, r[0]['forsale'], '')
         self.assertEqual('2012-08-20', r[0]['expiration'], '')
+        self.assertEqual('StarBucks', r[0]['reward']['merchant']['name'], '')
+        self.assertEqual('101 abc ave, san jose, ca', r[0]['reward']['merchant']['address'], '')
         self.assertEqual('free whole-wheet bread', r[1]['reward']['description'], '')
         self.assertEqual('testuser2', r[1]['user']['username'], '')
         self.assertEqual(20, r[1]['reward']['equiv_points'], '')
         self.assertEqual(True, r[1]['forsale'], '')
         self.assertEqual('2012-08-15', r[1]['expiration'], '')
+        self.assertEqual('Safeway', r[1]['reward']['merchant']['name'], '')
+        self.assertEqual('434 abc ave, san jose, ca', r[1]['reward']['merchant']['address'], '')
         
         jsonstr = json.dumps({"merchant_id":1, "rewardprogram_id":1})
         response = c.post('/api/users/2/reward', jsonstr, 'application/json', **self.extra)
