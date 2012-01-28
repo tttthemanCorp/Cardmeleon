@@ -46,7 +46,8 @@ urlpatterns = patterns('',
    # Delete: delete all reward-buying activities by 1 user ;
    url(r'^users/(?P<user_id>\d+)/buy$', trade_activity_handler, {'emitter_format':'json'}),
    # Get: get all reward-giving (gifting out) activities by 1 user ;  
-   # Post: gift out a reward by 1 user  ;   
+   # Post: gift out a reward to member by 1 user  ;   
+   # Put: gift out a reward to non-memeber by 1 user  ;   
    # Delete: delete all reward-giving (gifting out) activities by 1 user ;
    url(r'^users/(?P<user_id>\d+)/gift$', gift_activity_handler, {'emitter_format':'json'}),
    # Get: get all purchasing activities by 1 user ;  

@@ -77,6 +77,7 @@ class ServerTest(TestCase):
                             "address": "434 abc ave, san jose, ca", 
                             "longitude": 201.323, 
                             "latitude": 102.454,
+                            "logo": "/path/to/logo.png"
                         }, 
                         "equiv_points": 20, 
                         "name": "free bread", 
@@ -103,6 +104,7 @@ class ServerTest(TestCase):
                             "address": "101 abc ave, san jose, ca", 
                             "longitude": 22.323, 
                             "latitude": 44.454,
+                            "logo": "/path2/to/logo.png"
                         }, 
                         "equiv_points": 10, 
                         "name": "free starbucks", 
@@ -165,11 +167,13 @@ class ServerTest(TestCase):
         self.assertEqual(2, len(r['userrewards']), '')
         self.assertEqual('free bread', r['userrewards'][0]['reward']['name'], '')
         self.assertEqual('Safeway', r['userrewards'][0]['reward']['merchant']['name'], '')
+        self.assertEqual('/path/to/logo.png', r['userrewards'][0]['reward']['merchant']['logo'], '')
         self.assertAlmostEqual(201.323, r['userrewards'][0]['reward']['merchant']['longitude'], '')
         self.assertEqual(10, r['userrewards'][1]['reward']['equiv_points'], '')
         self.assertEqual(True, r['userrewards'][1]['forsale'], '')
         self.assertEqual('StarBucks', r['userrewards'][1]['reward']['merchant']['name'], '')
         self.assertAlmostEqual(44.454, r['userrewards'][1]['reward']['merchant']['latitude'], '')
+        self.assertEqual('/path2/to/logo.png', r['userrewards'][1]['reward']['merchant']['logo'], '')
         
         jsonstr = json.dumps({"username":"xin","email":"xin@test.com","phone":"4082538985","referer":{"refer_code":1}})
         response = c.post("/api/users", jsonstr, 'application/json', **self.extra)
@@ -922,17 +926,56 @@ class ServerTest(TestCase):
         Tests gift activity handler
         """
         c = Client()
+        
         jsonstr = json.dumps({"reward":{"id":1}, "to_user":{'id':3}, "description":"test gifting"})
         response = c.post('/api/users/2/gift', jsonstr, 'application/json', **self.extra)
         #print response.content
         self.assertEqual('Created', response.content, '')
         
+        jsonstr = json.dumps({"reward":{"id":2}, "description":"test gifting for non-member"})
+        response = c.put('/api/users/2/gift', jsonstr, 'application/json', **self.extra)
+        #print response.content
+        r = json.loads(response.content)
+        self.assertEqual(2, r['gift_code'], '')
+        
         '''
         [
             {
+                "description": "test gifting for non-member", 
+                "points_value": 10, 
+                "time": "2012-01-27 04:04:06", 
+                "to_user": null, 
+                "from_user": {
+                    "username": "testuser", 
+                    "first_name": "test", 
+                    "last_name": "user", 
+                    "email": "jun@cardmeleon.me"
+                }, 
+                "reward": {
+                    "status": 1, 
+                    "merchant": {
+                        "name": "StarBucks", 
+                        "longitude": 22.323, 
+                        "address": "101 abc ave, san jose, ca", 
+                        "latitude": 44.454, 
+                        "logo": "/path2/to/logo.png", 
+                        "id": 2
+                    }, 
+                    "equiv_points": 10, 
+                    "name": "free starbucks", 
+                    "expire_in_days": 0, 
+                    "id": 2, 
+                    "expire_in_years": 3, 
+                    "equiv_dollar": "10", 
+                    "expire_in_months": 0, 
+                    "description": "free one cup of starbucks coffee"
+                }, 
+                "activity_type": 3
+            }, 
+            {
                 "description": "test gifting", 
                 "points_value": 20, 
-                "time": "2011-10-10 01:09:18", 
+                "time": "2012-01-27 04:04:06", 
                 "to_user": {
                     "username": "testuser2", 
                     "first_name": "test2", 
@@ -949,6 +992,10 @@ class ServerTest(TestCase):
                     "status": 1, 
                     "merchant": {
                         "name": "Safeway", 
+                        "longitude": 201.323, 
+                        "address": "434 abc ave, san jose, ca", 
+                        "latitude": 102.454, 
+                        "logo": "/path/to/logo.png", 
                         "id": 1
                     }, 
                     "equiv_points": 20, 
@@ -967,14 +1014,21 @@ class ServerTest(TestCase):
         response = c.get('/api/users/2/gift', **self.extra)
         #print response.content
         r = json.loads(response.content)
-        self.assertEqual(1, len(r), '')
-        self.assertEqual('test gifting', r[0]['description'], '')
-        self.assertEqual(20, r[0]['points_value'], '')
+        self.assertEqual(2, len(r), '')
+        self.assertEqual('test gifting for non-member', r[0]['description'], '')
+        self.assertEqual(10, r[0]['points_value'], '')
         self.assertEqual('testuser', r[0]['from_user']['username'], '')
-        self.assertEqual('testuser2', r[0]['to_user']['username'], '')
-        self.assertEqual(20, r[0]['reward']['equiv_points'], '')
-        self.assertEqual('free bread', r[0]['reward']['name'], '')
+        self.assertIsNone(r[0]['to_user'], '')
+        self.assertEqual(10, r[0]['reward']['equiv_points'], '')
+        self.assertEqual('free starbucks', r[0]['reward']['name'], '')
         self.assertEqual(3, r[0]['activity_type'], '')
+        self.assertEqual('test gifting', r[1]['description'], '')
+        self.assertEqual(20, r[1]['points_value'], '')
+        self.assertEqual('testuser', r[1]['from_user']['username'], '')
+        self.assertEqual('testuser2', r[1]['to_user']['username'], '')
+        self.assertEqual(20, r[1]['reward']['equiv_points'], '')
+        self.assertEqual('free bread', r[1]['reward']['name'], '')
+        self.assertEqual(3, r[1]['activity_type'], '')
         
         gifterPoint = UserPoint.objects.get(user__id=2)
         gifteePoint = UserPoint.objects.get(user__id=3)

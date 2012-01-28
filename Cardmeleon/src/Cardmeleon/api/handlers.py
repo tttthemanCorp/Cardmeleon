@@ -712,7 +712,7 @@ class TradeActivityHandler(SharedHandler):
 
 #GiftActivityHandler
 class GiftActivityHandler(SharedHandler):
-    allowed_methods = ('GET', 'POST', 'DELETE')
+    allowed_methods = ('GET', 'POST', 'PUT', 'DELETE')
     #model = RewardActivity
 
     def read(self, request, user_id):
@@ -724,7 +724,7 @@ class GiftActivityHandler(SharedHandler):
     #@throttle(10, 60) # allow 5 times in 1 minute
     def create(self, request, user_id):
         """
-        Gift out a reward
+        Gift out a reward to a member
         """
         attrs = self.flatten_dict(request.data)
         #print attrs
@@ -760,6 +760,36 @@ class GiftActivityHandler(SharedHandler):
         userreward.save()
 
         return rc.CREATED
+
+    #@throttle(10, 60) # allow 5 times in 1 minute
+    def update(self, request, user_id):
+        """
+        Gift out a reward to a non-member
+        """
+        attrs = self.flatten_dict(request.data)
+        #print attrs
+        
+        user, reward, _ = self.idsValidation(user_id, attrs['reward']['id'], None)
+        
+        urHandler = UserRewardHandler()
+        exists, _ = urHandler.existsAndActive(user, reward)
+        if not exists:
+            raise ValueError, "reward doesn't belong to user, or reward is invalid/expired"
+            
+        #insert reward activity
+        rewardActivity = RewardActivity()
+        rewardActivity.time = datetime.now()
+        rewardActivity.reward = reward
+        rewardActivity.activity_type = 3
+        rewardActivity.description = attrs['description']
+        rewardActivity.points_value = reward.equiv_points
+        rewardActivity.from_user = user
+        rewardActivity.to_user = None
+
+        #commit to DB
+        rewardActivity.save()
+
+        return {"gift_code":rewardActivity.pk}
 
     #@throttle(10, 60) # allow 5 times in 1 minute
     def delete(self, request, user_id):
@@ -870,7 +900,7 @@ class UserProgressHandler(SharedHandler):
 class RewardHandler(SharedHandler):
     allowed_methods = ('GET', 'POST', 'PUT', 'DELETE')
     model = Reward
-    fields = ('id', 'name', 'description', 'equiv_dollar', 'equiv_points', 'expire_in_days', 'expire_in_months', 'expire_in_years', 'status', ('merchant', ('id', 'name', 'address', 'longitude', 'latitude')))
+    fields = ('id', 'name', 'description', 'equiv_dollar', 'equiv_points', 'expire_in_days', 'expire_in_months', 'expire_in_years', 'status', ('merchant', ('id', 'name', 'address', 'longitude', 'latitude', 'logo')))
 
     def read(self, request, merchant_id, reward_id=None):
         """
