@@ -49,6 +49,7 @@ class Merchant(models.Model):
     address = models.CharField(max_length=100)
     longitude = models.FloatField()
     latitude = models.FloatField()
+    description = models.CharField(max_length=500)
     
 #    def updateValues(self, **data):
 #        if 'name' in data:
@@ -164,4 +165,9 @@ class ReferralActivity(models.Model):
     class Meta:
         ordering = ['-time']
     
-    
+class UserReview(models.Model):
+    user = models.ForeignKey(User)
+    merchant = models.ForeignKey(Merchant)
+    review = models.CharField(max_length=1000)
+    time = models.DateField(null=True)
+    rating = models.DecimalField(max_digits=2,decimal_places=1,null=True)

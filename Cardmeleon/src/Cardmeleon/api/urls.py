@@ -6,7 +6,7 @@ Created on Aug 10, 2011
 
 from django.conf.urls.defaults import patterns, url
 from piston.resource import Resource
-from Cardmeleon.api.handlers import UserHandler, UserPrefHandler, ReferralActivityHandler, UserRewardHandler, TradeActivityHandler, RewardHandler
+from Cardmeleon.api.handlers import UserHandler, UserPrefHandler, ReferralActivityHandler, UserRewardHandler, TradeActivityHandler, RewardHandler, UserReviewHandler
 from Cardmeleon.api.handlers import PurchaseActivityHandler, RedeemActivityHandler, MerchantHandler, GiftActivityHandler, RewardProgramHandler, LoginHandler
 from piston.authentication import HttpBasicAuthentication, NoAuthentication
 
@@ -27,6 +27,7 @@ gift_activity_handler = Resource(GiftActivityHandler, **authChain)
 merchant_handler = Resource(MerchantHandler, **authChain)
 program_handler = Resource(RewardProgramHandler, **authChain)
 reward_handler = Resource(RewardHandler, **authChain)
+userreview_handler = Resource(UserReviewHandler, **authChain)
 
 
 urlpatterns = patterns('',
@@ -63,6 +64,10 @@ urlpatterns = patterns('',
    # Put: update values in 1 user's pref ;  
    # Delete: delete all pres belong to 1 user ;
    url(r'^users/(?P<user_id>\d+)/pref$', userpref_handler, {'emitter_format':'json'}),
+   # Get: get 1 user's all reviews ;  
+   # Post:  create a new user review for a merchant ;  
+   # Delete: delete all reviews belong to 1 user ;
+   url(r'^users/(?P<user_id>\d+)/review$', userreview_handler, {'emitter_format':'json'}),
    # Get: get full user info of 1 user ;  
    # Put: update info of 1 user ;  
    # Delete: delete 1 user ;
@@ -90,4 +95,6 @@ urlpatterns = patterns('',
    url(r'^stores$', merchant_handler, {'emitter_format':'json'}),
    # Get: get all nearby merchants ;
    url(r'^stores/prox/((?P<longitude>\d*\.?\d+),(?P<latitude>\d*\.?\d+),(?P<distance>\d+))?$', merchant_handler, {'emitter_format':'json'}),
+   # Get: get all user reviews for 1 merchant ;  
+   url(r'^stores/(?P<merchant_id>\d+)/review$', userreview_handler, {'emitter_format':'json'}),
 )

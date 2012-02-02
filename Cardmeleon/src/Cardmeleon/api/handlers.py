@@ -12,7 +12,7 @@ from django.db.models import Q
 from datetime import date
 from django.contrib.auth.models import User
 
-from Cardmeleon.server.models import UserProfile, UserPoint, UserReward, UserPref, ReferralActivity, PurchaseActivity, RewardActivity, Merchant, Reward, RewardProgram, UserProgress
+from Cardmeleon.server.models import UserReview, UserProfile, UserPoint, UserReward, UserPref, ReferralActivity, PurchaseActivity, RewardActivity, Merchant, Reward, RewardProgram, UserProgress
 from Cardmeleon.settings import REFERRAL_BONUS
 
 
@@ -458,6 +458,59 @@ class UserRewardHandler(SharedHandler):
         userrewards.delete()
         return rc.DELETED # returns HTTP 204
 
+
+#UserReviewHandler
+class UserReviewHandler(SharedHandler):
+    allowed_methods = ('GET', 'POST', 'DELETE')
+    model = UserReview
+    fields = (('user', ('id','username')), ('merchant', ('id','name')), 'review', 'time', 'rating')
+
+    def read(self, request, user_id=None, merchant_id=None):
+        """
+        If user_id is available, then returns all reviews left this user_id;
+        If merchant_id is available, then returns all reviews for this merchant_id
+        """
+        base = UserReview.objects
+
+        if user_id:
+            return base.filter(user__id=user_id)
+        else:
+            return base.filter(merchant__id=merchant_id)
+   
+    #@throttle(10, 60) # allow 5 times in 1 minute
+    def create(self, request, user_id):
+        """
+        User post a review for a merchant
+        """
+        attrs = self.flatten_dict(request.data)
+        #print attrs
+        
+        user, _, merchant = self.idsValidation(user_id, None, attrs['merchant']['id'])
+ 
+        userreview = UserReview()
+        userreview.user = user
+        userreview.merchant = merchant
+        userreview.review = attrs['review']
+        userreview.time = date.today()
+        userreview.rating = Decimal("%1.1f" % attrs.get('rating'))
+        
+        #commit to DB
+        userreview.save()
+            
+        return rc.CREATED
+
+    #@throttle(10, 60) # allow 5 times in 1 minute
+    def delete(self, request, user_id):
+        """
+        Delete all reviews belong to a user_id
+        """
+        userreviews = UserReview.objects.filter(user__id=user_id)
+        if not userreviews:
+            return rc.NOT_FOUND
+        
+        userreviews.delete()
+        return rc.DELETED # returns HTTP 204
+
         
 # ReferralActivityHandler
 class ReferralActivityHandler(SharedHandler):
@@ -817,8 +870,10 @@ class MerchantHandler(SharedHandler):
         base = Merchant.objects
 
         if merchant_id:
-            self.fields = ('name', 'longitude', 'phone', 'address', 'latitude', 'logo', 'email')
+            self.fields = ('name', 'longitude', 'phone', 'address', 'latitude', 'logo', 'email', ('rewardprogram_set',()))
             return base.get(id=merchant_id)
+            
+            #return {"name":userpref, "user":user, }
         else:
             query = "SELECT (acos(sin(latitude * 0.017453292) * sin(%s * 0.017453292) + cos(latitude * 0.017453292) * cos(%s * 0.017453292) * cos((longitude - %s) * 0.017453292)) * 3958.565474745) AS distance, \
             a.*, b.reward_trigger, '' as desc FROM server_merchant a, server_rewardprogram b \
